@@ -1,0 +1,107 @@
+# GENERATED — review before use
+# Docker Compose for a 3-node CockroachDB local cluster.
+# Security rationale: running in --insecure mode for local dev only. TODO: add TLS/certs for secure mode.
+
+version: '3.8'
+
+services:
+  cockroach1:
+    image: "${COCKROACH_IMAGE}:${COCKROACH_TAG}"
+    container_name: cockroach1
+    # Explicit listen/http/advertise addresses ensure nodes can find each other on the Docker network.
+    # Command is provided as a YAML list so each flag is a separate argv token (avoids parsing errors).
+    # NOTE: `${COCKROACH_START_FLAGS}` (if set to multiple flags) is unsupported in list form.
+    # If you need extra flags, edit the list below and add them as separate entries.
+    command:
+      - start
+      - --insecure
+      - --join=${JOIN_HOSTS}
+      - --listen-addr=0.0.0.0:26257
+      - --http-addr=0.0.0.0:8080
+      - --advertise-addr=cockroach1:26257
+    hostname: cockroach1
+    ports:
+      - "${SQL_PORT_1}:26257"  # SQL
+      - "${HTTP_PORT_1}:8080"  # Admin UI
+    volumes:
+      - "cockroach-data-1:/cockroach/cockroach-data"
+    restart: ${RESTART_POLICY}
+    healthcheck:
+      test: ["CMD", "bash", "-c", "/cockroach/cockroach node status --insecure --host=localhost:26257 | grep -q node"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  cockroach2:
+    image: "${COCKROACH_IMAGE}:${COCKROACH_TAG}"
+    container_name: cockroach2
+    # Explicit listen/http/advertise addresses ensure nodes can find each other on the Docker network.
+    command:
+      - start
+      - --insecure
+      - --join=${JOIN_HOSTS}
+      - --listen-addr=0.0.0.0:26257
+      - --http-addr=0.0.0.0:8080
+      - --advertise-addr=cockroach2:26257
+    hostname: cockroach2
+    ports:
+      - "${SQL_PORT_2}:26257"
+      - "${HTTP_PORT_2}:8080"
+    volumes:
+      - "cockroach-data-2:/cockroach/cockroach-data"
+    restart: ${RESTART_POLICY}
+    healthcheck:
+      test: ["CMD", "bash", "-c", "/cockroach/cockroach node status --insecure --host=localhost:26257 | grep -q node"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  cockroach3:
+    image: "${COCKROACH_IMAGE}:${COCKROACH_TAG}"
+    container_name: cockroach3
+    # Explicit listen/http/advertise addresses ensure nodes can find each other on the Docker network.
+    command:
+      - start
+      - --insecure
+      - --join=${JOIN_HOSTS}
+      - --listen-addr=0.0.0.0:26257
+      - --http-addr=0.0.0.0:8080
+      - --advertise-addr=cockroach3:26257
+    hostname: cockroach3
+    ports:
+      - "${SQL_PORT_3}:26257"
+      - "${HTTP_PORT_3}:8080"
+    volumes:
+      - "cockroach-data-3:/cockroach/cockroach-data"
+    restart: ${RESTART_POLICY}
+    healthcheck:
+      test: ["CMD", "bash", "-c", "/cockroach/cockroach node status --insecure --host=localhost:26257 | grep -q node"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  init:
+    image: "${COCKROACH_IMAGE}:${COCKROACH_TAG}"
+    container_name: cockroach-init
+    depends_on:
+      - cockroach1
+      - cockroach2
+      - cockroach3
+    entrypoint: ["/bin/bash", "/init/init-cockroach.sh"]
+    volumes:
+      - ./init:/init:ro
+    environment:
+      - INIT_HOST=${INIT_HOST}
+    restart: "no"
+
+# Explicit named volumes for node data. Using explicit names avoids interpolation in top-level keys.
+volumes:
+  cockroach-data-1:
+  cockroach-data-2:
+  cockroach-data-3:
+
+# Notes:
+# - This compose file expects a .env (or pass env vars via --env-file) with variables described in .env.sample.
+# - For secure setups, replace --insecure with --certs-dir and mount a certs directory into each node.
+# - Healthchecks use the cockroach binary at /cockroach/cockroach inside the official image.
+# - If you prefer a different naming scheme for volumes, use explicit names (no ${VAR} interpolation) in the top-level 'volumes:' block.
