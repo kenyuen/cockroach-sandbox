@@ -93,6 +93,14 @@ Code generation guardrails for Copilot
 - When generating Dockerfiles or manifests, include a comment explaining the security rationale for each directive.
 - Mark generated code clearly (e.g., `// GENERATED — review before use`).
 
+Seed tooling guidance (Java/Maven preferred)
+
+- For repositories primarily using the JVM/Java stack, prefer generating seed utilities as a small Maven module under a `seed/` directory.
+- Use a minimal `pom.xml` that produces an executable jar (jar-with-dependencies) so maintainers can run the seeder either locally (`java -jar`) or within a container.
+- Rationale: Maven projects are reproducible, easy to build in CI, and integrate with common Java ecosystems used by Spring Boot services.
+- Generated seed code should accept environment variables (JDBC_URL, DB_USER) and provide conservative defaults for local development. Add clear TODOs for secure-mode adjustments (certs/jdbc params).
+- If the project uses a different primary language, prefer the project's package manager/standard build tool (npm, pip, gradle) for seed utilities and document the run instructions in `seed/README.md`.
+
 Docker Compose (modern / v2+ spec) guidance
 
 When generating `docker-compose.yml` files prefer the modern Compose specification (v2+). The following explicit rules help avoid common pitfalls and make generated compose files robust and portable:
