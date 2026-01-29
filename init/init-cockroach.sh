@@ -39,7 +39,19 @@ fi
 
 # Example: create a sample database/user for local development. Comment out if not desired.
 ${COCKROACH_BIN} sql --insecure --host=${INIT_HOST} --execute "CREATE DATABASE IF NOT EXISTS demo;"
-${COCKROACH_BIN} sql --insecure --host=${INIT_HOST} --execute "CREATE USER IF NOT EXISTS demo WITH PASSWORD 'demo';" || true
+
+# Try to create user with a password. In --insecure mode, setting a password is not supported
+# so fallback to creating the user without a password when the first attempt fails.
+set +e
+${COCKROACH_BIN} sql --insecure --host=${INIT_HOST} --execute "CREATE USER IF NOT EXISTS demo WITH PASSWORD 'demo';"
+RC=$?
+set -e
+if [ ${RC} -ne 0 ]; then
+  echo "Creating user with password failed (likely insecure mode). Falling back to no-password user."
+  ${COCKROACH_BIN} sql --insecure --host=${INIT_HOST} --execute "CREATE USER IF NOT EXISTS demo;" || true
+fi
+
+# Grant privileges (may fail in some setups; ignore errors)
 ${COCKROACH_BIN} sql --insecure --host=${INIT_HOST} --execute "GRANT ALL ON DATABASE demo TO demo;" || true
 
 echo "Init script completed."

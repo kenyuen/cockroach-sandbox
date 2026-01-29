@@ -2,7 +2,6 @@
 # Docker Compose for a 3-node CockroachDB local cluster.
 # Security rationale: running in --insecure mode for local dev only. TODO: add TLS/certs for secure mode.
 
-version: '3.8'
 
 services:
   cockroach1:
@@ -31,6 +30,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - cockroach_net
 
   cockroach2:
     image: "${COCKROACH_IMAGE}:${COCKROACH_TAG}"
@@ -55,6 +56,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - cockroach_net
 
   cockroach3:
     image: "${COCKROACH_IMAGE}:${COCKROACH_TAG}"
@@ -79,6 +82,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - cockroach_net
 
   init:
     image: "${COCKROACH_IMAGE}:${COCKROACH_TAG}"
@@ -93,12 +98,19 @@ services:
     environment:
       - INIT_HOST=${INIT_HOST}
     restart: "no"
+    networks:
+      - cockroach_net
 
 # Explicit named volumes for node data. Using explicit names avoids interpolation in top-level keys.
 volumes:
   cockroach-data-1:
   cockroach-data-2:
   cockroach-data-3:
+
+# Explicit network following modern Compose specification (v2+ / Compose spec).
+networks:
+  cockroach_net:
+    driver: bridge
 
 # Notes:
 # - This compose file expects a .env (or pass env vars via --env-file) with variables described in .env.sample.

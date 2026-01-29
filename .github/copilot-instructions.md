@@ -93,15 +93,28 @@ Code generation guardrails for Copilot
 - When generating Dockerfiles or manifests, include a comment explaining the security rationale for each directive.
 - Mark generated code clearly (e.g., `// GENERATED — review before use`).
 
-Reviewer checklist (PRs that add services or containers)
-- [ ] Service has README and purpose statement.
-- [ ] Required config properties are documented and validated.
-- [ ] No secrets are committed.
-- [ ] Container runs as non-root; HEALTHCHECK present.
-- [ ] Metrics and health endpoints enabled.
-- [ ] Unit and integration tests included and passing.
-- [ ] Dependency scan shows no critical CVEs.
-- [ ] Image tagged with semantic version + git SHA.
+Docker Compose (modern / v2+ spec) guidance
+
+When generating `docker-compose.yml` files prefer the modern Compose specification (v2+). The following explicit rules help avoid common pitfalls and make generated compose files robust and portable:
+
+- Do not include the top-level `version:` key. The Compose spec is versionless and modern compose tooling ignores the `version` attribute; omitting it avoids deprecation warnings.
+- Declare an explicit top-level `networks:` block and attach services to a named network (for example `cockroach_net`). This makes service discovery and network scoping explicit.
+- Avoid interpolated expressions in top-level mapping keys (for example do not use `${VAR}-name:` as a top-level volume key). Many compose validators reject variable expressions as mapping keys. Use one of these accepted patterns instead:
+  - Preferred: declare explicit named volumes at the top level (e.g. `cockroach-data-1:`) and reference them from services.
+  - Alternate: use service-level host bind mounts under the repo (e.g. `./data/cockroach-data-1:/cockroach/cockroach-data`) when you want the data visible in the workspace.
+- When using environment-driven values, interpolate variables in service fields (image, ports, environment, service-level volume strings) but not in top-level schema keys.
+- Use YAML list form for `command:` entries when passing multiple flags. This prevents flag parsing issues where a single string is interpreted incorrectly. Example: `command: [ "start", "--insecure", "--join=cockroach1:26257" ]`.
+  - Note: environment variables that contain multiple flags (e.g. `COCKROACH_START_FLAGS="--cache=25% --max-sql-memory=25%"`) cannot be expanded sensibly into a YAML list — prefer explicit separate entries in the list instead.
+- Healthchecks should reference absolute binary paths where possible (for example `/cockroach/cockroach node status ...`) so the healthcheck works regardless of working directory inside the container.
+- Prefer explicit, deterministic port mappings in the `ports:` section for local-development compose files so host ports are predictable for users and tests.
+- Add clear TODO markers for any security-related choices (for example `# TODO: switch to --certs-dir and mount certs/ for secure mode`).
+
+Reviewer checklist additions (compose-specific)
+- [ ] `docker-compose.yml` has no `version:` attribute.
+- [ ] A top-level `networks:` block is present and services explicitly attach to it (or the rationale for not doing so is documented).
+- [ ] No top-level mapping keys use `${...}` interpolation (volumes, networks, etc.).
+- [ ] Service `command:` uses YAML list form for flags (or a clear comment explains why string form was used).
+- [ ] Volume strategy is explicit: named volumes declared at top-level or repo bind-mounts used and `.gitignore` updated accordingly.
 
 Enforcement suggestions (CI rules)
 - Fail PRs on: failing tests, critical CVEs, images built as root, missing healthcheck, or missing health/metrics endpoints.
