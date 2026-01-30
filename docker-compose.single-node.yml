@@ -9,6 +9,7 @@ services:
     command:
       - start-single-node
       - --insecure
+      - --advertise-addr=cockroach:26257
     hostname: cockroach
     ports:
       - "26257:26257"  # SQL port (host:container)
@@ -34,7 +35,7 @@ services:
     volumes:
       - ./init:/init:ro
     environment:
-      - INIT_HOST=${INIT_HOST:-cockroach:26257}
+      - "INIT_HOST=cockroach:26257"
     restart: "no"
     networks:
       - cockroach_single_net
