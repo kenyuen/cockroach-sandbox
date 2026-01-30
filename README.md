@@ -55,7 +55,7 @@ docker-compose --env-file .env exec cockroach1 /cockroach/cockroach node status 
 Environment variable defaults (used if not supplied in `.env`)
 
 - COCKROACH_IMAGE: cockroachdb/cockroach
-- COCKROACH_TAG: v23.2.6
+- COCKROACH_TAG: v25.4.3
 - JOIN_HOSTS: cockroach1:26257,cockroach2:26257,cockroach3:26257 (default fallback)
 - SQL_PORT_1/2/3: host ports for node SQL (examples in `.env.sample`)
 - HTTP_PORT_1/2/3: host ports for admin UI
