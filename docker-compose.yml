@@ -15,8 +15,8 @@ services:
       - start
       - --insecure
       - --join=${JOIN_HOSTS:-cockroach1:26257,cockroach2:26257,cockroach3:26257}
-      - --listen-addr=0.0.0.0:26257
-      - --http-addr=0.0.0.0:8080
+      - --listen-addr=cockroach1:26257
+      - --http-addr=cockroach1:8080
       - --advertise-addr=cockroach1:26257
     hostname: cockroach1
     ports:
@@ -42,8 +42,8 @@ services:
       - start
       - --insecure
       - --join=${JOIN_HOSTS:-cockroach1:26257,cockroach2:26257,cockroach3:26257}
-      - --listen-addr=0.0.0.0:26257
-      - --http-addr=0.0.0.0:8080
+      - --listen-addr=cockroach2:26257
+      - --http-addr=cockroach2:8080
       - --advertise-addr=cockroach2:26257
     hostname: cockroach2
     ports:
@@ -69,8 +69,8 @@ services:
       - start
       - --insecure
       - --join=${JOIN_HOSTS:-cockroach1:26257,cockroach2:26257,cockroach3:26257}
-      - --listen-addr=0.0.0.0:26257
-      - --http-addr=0.0.0.0:8080
+      - --listen-addr=cockroach3:26257
+      - --http-addr=cockroach3:8080
       - --advertise-addr=cockroach3:26257
     hostname: cockroach3
     ports:
