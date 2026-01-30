@@ -5,6 +5,8 @@
 
 set -euo pipefail
 
+# TODO: For production, switch to secure mode - mount certs and run with --certs-dir (do not use --insecure)
+
 # Allow overriding via environment
 INIT_HOST=${INIT_HOST:-cockroach1:26257}
 RETRIES=30
@@ -12,9 +14,21 @@ SLEEP=2
 
 COCKROACH_BIN=${COCKROACH_BIN:-/cockroach/cockroach}
 
+# Fail-fast: ensure the cockroach binary exists and is executable
+if [ ! -x "${COCKROACH_BIN}" ]; then
+  echo "ERROR: Cockroach binary not found or not executable at ${COCKROACH_BIN}" >&2
+  exit 2
+fi
+
 # Extract host (before colon) to use for node-status checks
 INIT_HOST_ONLY=${INIT_HOST%%:*}
 INIT_PORT=${INIT_HOST##*:}
+
+# Validate INIT_HOST format (require host:port)
+if [[ ! "${INIT_HOST}" =~ :[0-9]+$ ]]; then
+  echo "ERROR: INIT_HOST must be in host:port form (got: ${INIT_HOST})" >&2
+  exit 2
+fi
 
 echo "Waiting for CockroachDB node at ${INIT_HOST} to accept connections..."
 for i in $(seq 1 ${RETRIES}); do

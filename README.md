@@ -15,44 +15,88 @@ Files added (check repo root):
 - `.env.sample` — copy to `.env` and edit values like image tag and ports.
 - `init/init-cockroach.sh` — init script that runs `cockroach init` and creates a sample DB/user.
 
-Quick start
+Developer quickstart (clean start)
 
-1. Copy `.env.sample` to `.env` and edit if needed:
+Follow these steps to start a fresh local 3-node cluster for development. These commands are for macOS zsh and assume Docker Desktop is installed.
 
-```bash
+1. Copy `.env.sample` to `.env` and edit if needed (optional). The compose file uses sensible defaults if `.env` is missing.
+
+```zsh
 cp .env.sample .env
-# edit .env as desired
+# Edit .env to adjust ports or image tag if desired
 ```
 
-2. Start the cluster:
+2. Start a clean cluster (removes named volumes first to avoid stale state):
 
-```bash
+```zsh
+# Stop and remove any existing stack and its volumes (will delete node data)
+docker-compose --env-file .env down -v
+# Start the stack in detached mode
 docker-compose --env-file .env up -d
 ```
 
-3. Run the init job (if it didn't run automatically):
+3. The `init` one-shot service usually runs automatically. To run it manually (idempotent):
 
-```bash
+```zsh
 docker-compose --env-file .env run --rm init
 ```
 
-4. Check status and logs:
+4. Verify the cluster has 3 nodes and is healthy:
 
-```bash
+```zsh
+# check service status
 docker-compose --env-file .env ps
-docker-compose --env-file .env logs -f cockroach1
-# Admin UI: http://localhost:8080 (or ports from your .env)
+# tail logs
+docker-compose --env-file .env logs -f --tail=200 cockroach1 cockroach2 cockroach3
+# check node membership from inside a node
+docker-compose --env-file .env exec cockroach1 /cockroach/cockroach node status --insecure --host=localhost:26257
 ```
 
-Upgrade notes
+Environment variable defaults (used if not supplied in `.env`)
 
-- To change CockroachDB versions, update `COCKROACH_TAG` in `.env`, pull the new image, and perform rolling restarts of nodes one at a time. See `docker-compose --env-file .env pull` and then recreate each node with `docker-compose --env-file .env up -d --no-deps --force-recreate cockroach<N>`.
+- COCKROACH_IMAGE: cockroachdb/cockroach
+- COCKROACH_TAG: v23.2.6
+- JOIN_HOSTS: cockroach1:26257,cockroach2:26257,cockroach3:26257 (default fallback)
+- SQL_PORT_1/2/3: host ports for node SQL (examples in `.env.sample`)
+- HTTP_PORT_1/2/3: host ports for admin UI
+- RESTART_POLICY: default compose restart policy for nodes (local default is `unless-stopped`)
 
-Security & TODOs
+Troubleshooting tips (common issues & quick checks)
 
-- This local setup runs `--insecure` by default for convenience — do NOT use `--insecure` in production.
-- TODO: add TLS/certs generation steps, a `certs/` mount, and change to `--certs-dir` usage.
-- Do not commit `.env` with secrets or private certs; use a secret manager in production.
+- If nodes do not join the cluster:
+  - Check container logs for join errors:
+
+```zsh
+# show recent logs
+docker-compose --env-file .env logs --tail=200 cockroach1 cockroach2 cockroach3
+# check the init job logs
+docker logs --tail=200 cockroach-init || true
+```
+
+  - Confirm the containers can reach each other on the SQL port from inside the network (example from the init container):
+
+```zsh
+# run a quick TCP probe from init (if init is running interactively)
+docker exec -it cockroach-init bash -c '</dev/tcp/cockroach1/26257' && echo ok || echo fail
+```
+
+  - Ensure `--join` points to service names and ports that exist. By default `JOIN_HOSTS` falls back to `cockroach1:26257,cockroach2:26257,cockroach3:26257`.
+
+- If `cockroach init` fails or indicates the cluster is already initialized:
+  - You probably have existing node data in the named volumes. To reset and re-initialize, stop the stack and remove volumes:
+
+```zsh
+docker-compose --env-file .env down -v
+# then start again
+docker-compose --env-file .env up -d
+```
+
+- Healthchecks and `depends_on` do not guarantee full readiness. The `init` script uses a TCP probe and Cockroach `node status`/SQL probes; if you change these, ensure the probe sequence still allows `cockroach init` to run once a node is listening.
+
+Security notes & TODOs
+
+- This local playground runs the cluster in `--insecure` mode for convenience. Do NOT use `--insecure` in production. TODO: add secure-cert generation steps, example cert mounts, and switch to `--certs-dir` in `docker-compose.yml` and `init/init-cockroach.sh`.
+- Do not commit `.env` containing secrets or cert paths.
 
 ## Liquibase (apply DB changelogs)
 
