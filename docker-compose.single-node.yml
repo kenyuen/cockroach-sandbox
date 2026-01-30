@@ -1,0 +1,56 @@
+# GENERATED — review before use
+# Single-node Docker Compose for local development.
+# Security rationale: runs in --insecure mode for local dev only. TODO: add TLS/certs for secure mode and run as non-root user.
+
+services:
+  cockroach:
+    image: "${COCKROACH_IMAGE}:${COCKROACH_TAG}"
+    container_name: cockroach
+    command:
+      - start-single-node
+      - --insecure
+    hostname: cockroach
+    ports:
+      - "26257:26257"  # SQL port (host:container)
+      - "8080:8080"   # Admin UI
+    volumes:
+      - "cockroach-data-single:/cockroach/cockroach-data"
+    restart: ${RESTART_POLICY:-"no"}
+    healthcheck:
+      test: ["CMD", "/cockroach/cockroach", "node", "status", "--insecure", "--host=localhost:26257"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - cockroach_single_net
+
+  init:
+    image: "${COCKROACH_IMAGE}:${COCKROACH_TAG}"
+    container_name: cockroach-init
+    depends_on:
+      - cockroach
+    entrypoint: ["/bin/bash", "/init/init-cockroach.sh"]
+    volumes:
+      - ./init:/init:ro
+    environment:
+      - INIT_HOST=${INIT_HOST:-cockroach:26257}
+    restart: "no"
+    networks:
+      - cockroach_single_net
+
+# Explicit named volumes for node data. Do not use interpolation in top-level keys.
+volumes:
+  cockroach-data-single:
+
+# Explicit network following modern Compose specification (v2+ / Compose spec).
+networks:
+  cockroach_single_net:
+    driver: bridge
+
+# Notes / TODOs:
+# - This single-node compose is intended for local development and testing only.
+# - TODO: switch to --certs-dir and mount certs/ for secure mode; do not use --insecure in production.
+# - TODO: consider running the cockroach process as a non-root user and set appropriate file permissions on volumes.
+# - Use an .env (or pass --env-file) to override COCKROACH_IMAGE, COCKROACH_TAG, SQL_PORT_1, HTTP_PORT_1, and RESTART_POLICY.
+# - To run the stack: `docker compose -f docker-compose.single-node.yml up -d` (see README for more details).
