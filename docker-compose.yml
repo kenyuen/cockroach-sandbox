@@ -14,7 +14,7 @@ services:
     command:
       - start
       - --insecure
-      - --join=${JOIN_HOSTS}
+      - --join=${JOIN_HOSTS:-cockroach1:26257,cockroach2:26257,cockroach3:26257}
       - --listen-addr=0.0.0.0:26257
       - --http-addr=0.0.0.0:8080
       - --advertise-addr=cockroach1:26257
@@ -24,12 +24,13 @@ services:
       - "${HTTP_PORT_1}:8080"  # Admin UI
     volumes:
       - "cockroach-data-1:/cockroach/cockroach-data"
-    restart: ${RESTART_POLICY}
+    restart: ${RESTART_POLICY:-"no"}
     healthcheck:
-      test: ["CMD", "bash", "-c", "/cockroach/cockroach node status --insecure --host=localhost:26257 | grep -q node"]
+      test: ["CMD", "/cockroach/cockroach", "node", "status", "--insecure", "--host=localhost:26257"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 10s
     networks:
       - cockroach_net
 
@@ -40,7 +41,7 @@ services:
     command:
       - start
       - --insecure
-      - --join=${JOIN_HOSTS}
+      - --join=${JOIN_HOSTS:-cockroach1:26257,cockroach2:26257,cockroach3:26257}
       - --listen-addr=0.0.0.0:26257
       - --http-addr=0.0.0.0:8080
       - --advertise-addr=cockroach2:26257
@@ -50,12 +51,13 @@ services:
       - "${HTTP_PORT_2}:8080"
     volumes:
       - "cockroach-data-2:/cockroach/cockroach-data"
-    restart: ${RESTART_POLICY}
+    restart: ${RESTART_POLICY:-"no"}
     healthcheck:
-      test: ["CMD", "bash", "-c", "/cockroach/cockroach node status --insecure --host=localhost:26257 | grep -q node"]
+      test: ["CMD", "/cockroach/cockroach", "node", "status", "--insecure", "--host=localhost:26257"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 10s
     networks:
       - cockroach_net
 
@@ -66,7 +68,7 @@ services:
     command:
       - start
       - --insecure
-      - --join=${JOIN_HOSTS}
+      - --join=${JOIN_HOSTS:-cockroach1:26257,cockroach2:26257,cockroach3:26257}
       - --listen-addr=0.0.0.0:26257
       - --http-addr=0.0.0.0:8080
       - --advertise-addr=cockroach3:26257
@@ -76,12 +78,13 @@ services:
       - "${HTTP_PORT_3}:8080"
     volumes:
       - "cockroach-data-3:/cockroach/cockroach-data"
-    restart: ${RESTART_POLICY}
+    restart: ${RESTART_POLICY:-"no"}
     healthcheck:
-      test: ["CMD", "bash", "-c", "/cockroach/cockroach node status --insecure --host=localhost:26257 | grep -q node"]
+      test: ["CMD", "/cockroach/cockroach", "node", "status", "--insecure", "--host=localhost:26257"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 10s
     networks:
       - cockroach_net
 
