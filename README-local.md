@@ -13,9 +13,9 @@ cockroach start-single-node --insecure --listen-addr=localhost:26257 --http-addr
 ```
 Access the Admin UI at: http://localhost:8080
 
-To stop the node, use:
+Stop the node and cleanup data directory when done, note this is destructive:
 ```bash
-cockroach quit --insecure --host=localhost:26257    
+rm -rf cockroach-data*    
 ```
 ## Start a multi-node CockroachDB cluster
 To run multiple nodes locally without Docker, you can start additional nodes on different ports and join them together. For example:
