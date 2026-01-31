@@ -1,0 +1,103 @@
+<!--
+  GENERATED — review before use
+  This small Maven project is a convenience wrapper to run Liquibase from the repository using
+  the Liquibase Maven plugin. It intentionally leaves credentials out of the file and prefers
+  passing runtime values via -D properties or secure Maven settings.
+
+  Security & usage notes:
+  - Do NOT commit production credentials into this file. Supply JDBC URL / username / password via
+    -Dliquibase.url, -Dliquibase.username and -Dliquibase.password or via your Maven settings.xml
+    or a CI secret store.
+  - The plugin version and JDBC driver are pinned for reproducibility. Update consciously and
+    scan for CVEs in CI before bumping.
+  - TODO: add a secure-mode example that mounts certs and demonstrates the secure JDBC URL.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>com.example.cockroach</groupId>
+  <artifactId>liquibase-runner</artifactId>
+  <version>0.1.0-SNAPSHOT</version>
+  <name>liquibase-runner</name>
+  <description>Small Maven project to run Liquibase against the local CockroachDB playground</description>
+
+  <properties>
+    <!-- Pinned versions for reproducibility -->
+    <liquibase.plugin.version>4.23.1</liquibase.plugin.version>
+    <postgresql.version>42.6.0</postgresql.version>
+    <maven.compiler.source>11</maven.compiler.source>
+    <maven.compiler.target>11</maven.compiler.target>
+  </properties>
+
+  <dependencies>
+    <!-- PostgreSQL JDBC driver (CockroachDB is wire-compatible with Postgres client libraries) -->
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <version>${postgresql.version}</version>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <!-- Liquibase Maven plugin pinned to a fixed version. Use -D properties to supply URL/creds. -->
+      <plugin>
+        <groupId>org.liquibase</groupId>
+        <artifactId>liquibase-maven-plugin</artifactId>
+        <version>${liquibase.plugin.version}</version>
+        <configuration>
+          <!-- Default changeLog location inside the repo. Override with -Dliquibase.changeLogFile if needed. -->
+          <changeLogFile>changelog-master.xml</changeLogFile>
+          <!-- Driver is the Postgres driver; we intentionally do not hardcode URL/username/password here. -->
+          <driver>org.postgresql.Driver</driver>
+          <!--
+            Recommended invocation examples (do NOT store passwords in the POM):
+            mvn org.liquibase:liquibase-maven-plugin:${liquibase.plugin.version}:update \
+              -Dliquibase.url="jdbc:postgresql://host.docker.internal:26257/defaultdb?sslmode=disable" \
+              -Dliquibase.username=root
+
+            For previewing SQL use `updateSQL` goal. In CI prefer passing credentials via secure env vars mapped to
+            Maven settings or using a temporary ephemeral DB.
+          -->
+        </configuration>
+        <executions>
+          <execution>
+            <id>run-update</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>update</goal>
+            </goals>
+            <!-- GENERATED — review credentials sourcing before enabling CI runs. -->
+          </execution>
+        </executions>
+      </plugin>
+
+      <!-- Optional: enforcer to keep builds consistent (lightweight rule set) -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <version>3.3.0</version>
+        <executions>
+          <execution>
+            <id>enforce-java</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <requireJavaVersion>
+                  <version>[11,)</version>
+                </requireJavaVersion>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
+  <!-- NOTE: do not store credentials here. Use -Dliquibase.password or settings.xml servers entry. -->
+
+</project>

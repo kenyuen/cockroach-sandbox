@@ -37,5 +37,8 @@ docker-compose.override.yml
 
 # Local data from docker-compose
 /data/
-/cockroach-data/
+/cockroach-data*/
+
+# local targets
+target/
 

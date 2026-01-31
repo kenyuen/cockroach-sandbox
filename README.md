@@ -107,39 +107,53 @@ Notes before you run
 - The examples assume a development, `--insecure` Cockroach cluster and the `root` user. Do NOT use `--insecure` in production.
 - TODO: if your Cockroach cluster is running in secure mode, mount the certs and update the JDBC URL/SSL params; do not disable SSL.
 
-Recommended — Dockerized Liquibase (no local install, macOS)
+Recommended — Maven-based Liquibase (run with mvn)
 
+If you prefer to run Liquibase directly with Maven (no Docker image), you can invoke the Liquibase Maven plugin directly from the command line. These examples use a pinned plugin version for reproducibility.
+
+Notes:
+- Run from the repository root so the relative path to `liquibase/changelog-master.xml` resolves.
+- On macOS, when connecting from a local process to services started by Docker Desktop that bind to localhost, use `host.docker.internal` as the host in the JDBC URL. If you run Maven inside the compose network (for example via an additional service), use the Cockroach service name (for example `cockroach1:26257`).
+- These commands assume `sslmode=disable` for the local, insecure playground. For secure mode, supply the appropriate SSL/JDBC options and mount certs; do not disable SSL in production. TODO: add a secure example that mounts certs and demonstrates the secure JDBC URL.
+
+# FIRST RUN (bootstrap): create the `app` database and the `demo` user
+# (run as `root` so changelogs that bootstrap DB/users can run)
 ```zsh
-# pinned image for reproducibility; change version as needed
-# FIRST RUN (bootstrap): run as privileged user (root) so the changelog can create the `app` database and `demo` user
-docker run --rm -v "$(pwd)":/work -w /work liquibase/liquibase:4.23.1 \
-  liquibase \
-  --changeLogFile=/liquibase/changelog-master.xml \
-  --url="jdbc:postgresql://host.docker.internal:26257/defaultdb?sslmode=disable" \
-  --username=root \
-  update
+mvn org.liquibase:liquibase-maven-plugin:4.23.1:update \
+  -Dliquibase.changeLogFile=liquibase/changelog-master.xml \
+  -Dliquibase.url="jdbc:postgresql://host.docker.internal:26257/defaultdb?sslmode=disable" \
+  -Dliquibase.username=root
 ```
 
-After the first (bootstrap) run completes, the `demo` user will be created and schema ownership transferred. For regular local runs you can use the `demo` user (no password in this local setup):
-
+# Subsequent runs (local dev) as `demo` (no password in this local setup)
 ```zsh
-# subsequent runs (local dev) as demo (no password)
-docker run --rm -v "$(pwd)":/work -w /work liquibase/liquibase:4.23.1 \
-  liquibase \
-  --changeLogFile=/liquibase/changelog-master.xml \
-  --url="jdbc:postgresql://host.docker.internal:26257/defaultdb?sslmode=disable" \
-  --username=demo \
-  update
+mvn org.liquibase:liquibase-maven-plugin:4.23.1:update \
+  -Dliquibase.changeLogFile=liquibase/changelog-master.xml \
+  -Dliquibase.url="jdbc:postgresql://host.docker.internal:26257/defaultdb?sslmode=disable" \
+  -Dliquibase.username=demo
 ```
 
-- On macOS use `host.docker.internal` so the Liquibase container can reach services bound to the host's localhost. If you run Liquibase inside the compose network instead, use the Cockroach service name (for example `cockroach1:26257`) and `--network` when running the Docker command.
-- To preview SQL without applying changes, replace `update` with `updateSQL`.
-
-Alternative — local Liquibase CLI (if installed locally)
-
+# Preview SQL without applying changes
 ```zsh
-# run as demo user (no password) for local dev
-docker run --rm -v "$(pwd)":/work -w /work liquibase/liquibase:4.23.1 liquibase --changeLogFile=/work/liquibase/changelog-master.xml --url="jdbc:postgresql://localhost:26257/defaultdb?sslmode=disable" --username=demo update
+mvn org.liquibase:liquibase-maven-plugin:4.23.1:updateSQL \
+  -Dliquibase.changeLogFile=liquibase/changelog-master.xml \
+  -Dliquibase.url="jdbc:postgresql://host.docker.internal:26257/defaultdb?sslmode=disable" \
+  -Dliquibase.username=demo
+```
+
+Optional: add the plugin to your `pom.xml` for convenience (repeatable config). Example snippet to add under `<build><plugins>`:
+
+```xml
+<!-- Add to pom.xml if you run Liquibase from this project frequently -->
+<plugin>
+  <groupId>org.liquibase</groupId>
+  <artifactId>liquibase-maven-plugin</artifactId>
+  <version>4.23.1</version>
+  <configuration>
+    <changeLogFile>liquibase/changelog-master.xml</changeLogFile>
+    <!-- Don't hardcode credentials in pom.xml for repositories; prefer -D properties or Maven settings -->
+  </configuration>
+</plugin>
 ```
 
 Verification (confirm changelogs applied)
