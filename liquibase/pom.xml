@@ -29,6 +29,12 @@
     <postgresql.version>42.6.0</postgresql.version>
     <maven.compiler.source>11</maven.compiler.source>
     <maven.compiler.target>11</maven.compiler.target>
+    <!-- URL/username/password are sourced from the environment so credentials are never committed. -->
+    <liquibase.url>${env.LIQUIBASE_URL}</liquibase.url>
+    <liquibase.username>${env.LIQUIBASE_USERNAME}</liquibase.username>
+    <liquibase.password>${env.LIQUIBASE_PASSWORD}</liquibase.password>
+    <!-- Liquibase parameter for the movr app user's password; sourced from MOVR_USER_PASSWORD at runtime. -->
+    <liquibase.parameters.movrUserPassword>${env.MOVR_USER_PASSWORD}</liquibase.parameters.movrUserPassword>
   </properties>
 
   <dependencies>
@@ -52,11 +58,25 @@
           <changeLogFile>changelog-master.xml</changeLogFile>
           <!-- Driver is the Postgres driver; we intentionally do not hardcode URL/username/password here. -->
           <driver>org.postgresql.Driver</driver>
+          <url>${liquibase.url}</url>
+          <username>${liquibase.username}</username>
+          <password>${liquibase.password}</password>
+          <defaultCatalogName>movr</defaultCatalogName>
+          <!-- Expect LIQUIBASE_URL/LIQUIBASE_USERNAME/LIQUIBASE_PASSWORD env vars (or -D overrides) before running. -->
           <!--
             Recommended invocation examples (do NOT store passwords in the POM):
-            mvn org.liquibase:liquibase-maven-plugin:${liquibase.plugin.version}:update \
+            # First-time setup copies the sample file, then source it so the plugin sees LIQUIBASE_* entries.
+            cp liquibase/.env.sample liquibase/.env # skip if already customized
+            set -a
+            source liquibase/.env
+            set +a
+            mvn -f liquibase/pom.xml liquibase:update
+
+            Alternatively pass properties inline without sourcing files:
+            mvn -f liquibase/pom.xml liquibase:update \
               -Dliquibase.url="jdbc:postgresql://host.docker.internal:26257/defaultdb?sslmode=disable" \
-              -Dliquibase.username=root
+              -Dliquibase.username=root \
+              -Dliquibase.password=changeme
 
             For previewing SQL use `updateSQL` goal. In CI prefer passing credentials via secure env vars mapped to
             Maven settings or using a temporary ephemeral DB.
@@ -65,7 +85,7 @@
         <executions>
           <execution>
             <id>run-update</id>
-            <phase>verify</phase>
+            <phase>update</phase>
             <goals>
               <goal>update</goal>
             </goals>
@@ -73,6 +93,7 @@
           </execution>
         </executions>
       </plugin>
+
 
       <!-- Optional: enforcer to keep builds consistent (lightweight rule set) -->
       <plugin>
@@ -97,6 +118,57 @@
       </plugin>
     </plugins>
   </build>
+
+  <profiles>
+    <!-- Profile exposes an explicit releaseLocks goal so stale changelog locks can be cleared on demand. -->
+    <profile>
+      <id>release-lock</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.liquibase</groupId>
+            <artifactId>liquibase-maven-plugin</artifactId>
+            <version>${liquibase.plugin.version}</version>
+            <executions>
+              <execution>
+                <id>release-lock</id>
+                <phase>validate</phase>
+                <goals>
+                  <goal>releaseLocks</goal>
+                </goals>
+                <!-- Requires -DforceReleaseLock=true so shared clusters are not unlocked accidentally. -->
+              </execution>
+            </executions>
+          </plugin>
+
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-enforcer-plugin</artifactId>
+            <version>3.3.0</version>
+            <executions>
+              <execution>
+                <id>confirm-force-release-lock</id>
+                <phase>validate</phase>
+                <goals>
+                  <goal>enforce</goal>
+                </goals>
+                <configuration>
+                  <rules>
+                    <requireProperty>
+                      <property>forceReleaseLock</property>
+                      <regex>true</regex>
+                      <regexMessage>Set -DforceReleaseLock=true to acknowledge releasing Liquibase locks.</regexMessage>
+                      <message>Aborting releaseLocks: missing -DforceReleaseLock=true opt-in.</message>
+                    </requireProperty>
+                  </rules>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 
   <!-- NOTE: do not store credentials here. Use -Dliquibase.password or settings.xml servers entry. -->
 

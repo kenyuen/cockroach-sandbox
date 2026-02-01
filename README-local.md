@@ -48,6 +48,8 @@ Then to stop all nodes, use:
 ```bash
 # Drain the nodes first
 cockroach node drain --host=localhost:26257 --insecure
+
+
 cockroach node drain --host=localhost:26258 --insecure
 cockroach node drain --host=localhost:26259 --insecure
 cockroach node drain --host=localhost:26260 --insecure  
@@ -55,7 +57,9 @@ cockroach node drain --host=localhost:26261 --insecure
 
 # Find the process
 ps aux | grep cockroach
-
+```
+Kill each node by its PID:
+```bash
 # Stop it gracefully
 kill <PID>
 
@@ -67,3 +71,13 @@ Then cleanup data directories if needed:
 ```bash
 rm -rf cockroach-data*
 ```
+
+# To load the Movr sample database schema and data
+```bash
+cockroach workload init movr 'postgresql://root@localhost:26257?sslmode=disable'
+```
+# To run the MovR workload (generates traffic)
+```bash
+cockroach workload run movr --duration=5m 'postgresql://root@localhost:26257?sslmode=disable'
+```
+

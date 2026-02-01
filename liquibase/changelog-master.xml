@@ -5,7 +5,7 @@
   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
 
   <!-- GENERATED — review before use -->
-  <!-- Master changelog: includes the customer schema changelog(s). -->
-  <include file="changelogs/001-create-customer.xml" relativeToChangelogFile="true"/>
+  <!-- Master changelog: includes the movr schema changelog(s). -->
+  <include file="changelogs/changelog-movr.xml" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>

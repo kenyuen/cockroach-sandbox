@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+  <changeSet id="001-bootstrap-movr-from-sql" author="copilot">
+    <comment>Execute the bootstrap SQL script to provision the movr schema.</comment>
+    <sqlFile path="../sql/001-create-movr.sql" relativeToChangelogFile="true" splitStatements="true" endDelimiter=";"/>
+  </changeSet>
+
+  <changeSet id="002-vehicles_data_with_json" author="copilot">
+    <comment>Execute the data loads.</comment>
+    <sqlFile path="../sql/002-vehicles_data_with_json.sql" relativeToChangelogFile="true" splitStatements="true" endDelimiter=";"/>
+  </changeSet>
+
+  <changeSet id="003-users_data" author="copilot">
+    <comment>Execute the data loads.</comment>
+    <sqlFile path="../sql/003-users_data.sql" relativeToChangelogFile="true" splitStatements="true" endDelimiter=";"/>
+  </changeSet>
+
+  <changeSet id="004-rides_data" author="copilot">
+    <comment>Execute the data loads.</comment>
+    <sqlFile path="../sql/004-rides_data.sql" relativeToChangelogFile="true" splitStatements="true" endDelimiter=";"/>
+  </changeSet>
+
+  <changeSet id="005-location_history_data" author="copilot">
+    <comment>Execute the data loads.</comment>
+    <sqlFile path="../sql/005-location_history_data.sql" relativeToChangelogFile="true" splitStatements="true" endDelimiter=";"/>
+  </changeSet>
+
+</databaseChangeLog>

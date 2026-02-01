@@ -28,6 +28,9 @@ replay_pid*
 .env
 certs/
 
+# Liquibase local overrides
+liquibase/.env
+
 # docker-compose local overrides
 docker-compose.override.yml
 
@@ -41,4 +44,3 @@ docker-compose.override.yml
 
 # local targets
 target/
-
