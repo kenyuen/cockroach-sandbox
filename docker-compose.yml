@@ -104,27 +104,27 @@ services:
     networks:
       - cockroach_net
 
-  proxy:
-    image: haproxy:2.9
-    container_name: cockroach-proxy
-    depends_on:
-      - cockroach1
-      - cockroach2
-      - cockroach3
-    volumes:
-      - ./proxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
-    ports:
-      - "${PROXY_SQL_PORT:-26257}:26257"  # Expose a single SQL port for clients
-      - "${PROXY_HTTP_PORT:-8080}:8080"    # Admin UI
-    restart: ${RESTART_POLICY:-"no"}
-    healthcheck:
-      test: ["CMD", "haproxy", "-c", "-f", "/usr/local/etc/haproxy/haproxy.cfg"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      start_period: 5s
-    networks:
-      - cockroach_net
+#  proxy:
+#    image: haproxy:2.9
+#    container_name: cockroach-proxy
+#    depends_on:
+#      - cockroach1
+#      - cockroach2
+#      - cockroach3
+#    volumes:
+#      - ./proxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+#    ports:
+#      - "${PROXY_SQL_PORT:-26257}:26257"  # Expose a single SQL port for clients
+#      - "${PROXY_HTTP_PORT:-8080}:8080"    # Admin UI
+#    restart: ${RESTART_POLICY:-"no"}
+#    healthcheck:
+#      test: ["CMD", "haproxy", "-c", "-f", "/usr/local/etc/haproxy/haproxy.cfg"]
+#      interval: 10s
+#      timeout: 5s
+#      retries: 3
+#      start_period: 5s
+#    networks:
+#      - cockroach_net
 
 # Explicit named volumes for node data. Using explicit names avoids interpolation in top-level keys.
 volumes:

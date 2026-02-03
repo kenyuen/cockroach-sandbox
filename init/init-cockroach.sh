@@ -70,8 +70,8 @@ else
   echo "cockroach init exit code ${RC} (may already be initialized). Continuing..."
 fi
 
-# Example: create a sample database/user for local development. Comment out if not desired.
-${COCKROACH_BIN} sql --insecure --host=${INIT_HOST} --execute "CREATE DATABASE IF NOT EXISTS demo;" || true
+# Example: create a sample database/movr for local development. Comment out if not desired.
+${COCKROACH_BIN} sql --insecure --host=${INIT_HOST} --execute "CREATE DATABASE IF NOT EXISTS movr;" || true
 
 # Try to create user with a password. In --insecure mode, setting a password is not supported
 # so fallback to creating the user without a password when the first attempt fails.
@@ -85,7 +85,7 @@ if [ ${RC} -ne 0 ]; then
 fi
 
 # Grant privileges (may fail in some setups; ignore errors)
-${COCKROACH_BIN} sql --insecure --host=${INIT_HOST} --execute "GRANT ALL ON DATABASE demo TO demo;" || true
+${COCKROACH_BIN} sql --insecure --host=${INIT_HOST} --execute "GRANT ALL ON DATABASE movr TO demo;" || true
 
 echo "Init script completed."
 
