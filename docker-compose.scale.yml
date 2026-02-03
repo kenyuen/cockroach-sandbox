@@ -1,0 +1,70 @@
+# GENERATED — review before use
+# Docker Compose for a scale-friendly CockroachDB experiment.
+# Security rationale: running in --insecure mode for local dev only. TODO: add TLS/certs for secure mode.
+
+services:
+  cockroach:
+    image: "${COCKROACH_IMAGE}:${COCKROACH_TAG}"
+    # Single service definition allows `docker compose --scale cockroach=<n>` to expand identical nodes.
+    command:
+      - start
+      - --insecure
+      - --join=cockroach:26257
+      - --listen-addr=cockroach:26257
+      - --http-addr=cockroach:8080
+    restart: ${RESTART_POLICY:-"no"}
+    healthcheck:
+      test: ["CMD", "/cockroach/cockroach", "node", "status", "--insecure", "--host=localhost:26257"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    # No host ports here because replicas would conflict. Access nodes through `docker compose exec` or an optional proxy.
+    volumes:
+      - "/cockroach/cockroach-data"
+    networks:
+      - cockroach_net
+
+  init:
+    image: "${COCKROACH_IMAGE}:${COCKROACH_TAG}"
+    depends_on:
+      - cockroach
+    entrypoint: ["/bin/bash", "/init/init-cockroach.sh"]
+    volumes:
+      - ./init:/init:ro
+    environment:
+      - INIT_HOST=cockroach:26257
+    restart: "no"
+    networks:
+      - cockroach_net
+
+  proxy:
+    # Security rationale: a single proxy keeps published ports limited while the nodes stay internal.
+    image: haproxy:2.9
+    depends_on:
+      - cockroach
+    volumes:
+      - ./proxy/haproxy.scale.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    ports:
+      - "${PROXY_SQL_PORT:-26257}:26257"
+      - "${PROXY_HTTP_PORT:-8080}:8080"
+    restart: ${RESTART_POLICY:-"no"}
+    healthcheck:
+      test: ["CMD", "haproxy", "-c", "-f", "/usr/local/etc/haproxy/haproxy.cfg"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    networks:
+      - cockroach_net
+
+# Named network ensures service discovery regardless of scale.
+networks:
+  cockroach_net:
+    driver: bridge
+
+# Notes for anyone running this template:
+# 1. Render the scaled cluster with `docker compose -f docker-compose.scale.yml up -d --scale cockroach=3`.
+# 2. Use `docker compose exec cockroach /cockroach/cockroach node status --insecure --host=localhost:26257` to inspect.
+# 3. HAProxy exposes the SQL/Admin ports on `${PROXY_SQL_PORT}` and `${PROXY_HTTP_PORT}`; adjust env vars as needed.
+# 4. The proxy config references `cockroach_<n>` hostnames—keep its server list in sync with the `--scale` target or switch to dynamic discovery.
