@@ -80,4 +80,11 @@ cockroach workload init movr 'postgresql://root@localhost:26257?sslmode=disable'
 ```bash
 cockroach workload run movr --duration=5m 'postgresql://root@localhost:26257?sslmode=disable'
 ```
+# Or if using liquibase to manage schema, need to create the movr database first
+```bash
+cockroach sql --insecure --host=localhost:26257 -e "CREATE DATABASE IF NOT EXISTS movr;"
+cockroach sql --insecure --host=localhost:26257 -e "CREATE USER IF NOT EXISTS demo;"
+cockroach sql --insecure --host=localhost:26257 -e "GRANT ALL ON DATABASE movr TO demo;"
+```
+Then run liquibase migrations as per the liquibase/README.md instructions.
 
