@@ -1,23 +1,22 @@
 # GENERATED — review before use
-# Docker Compose for a 3-node CockroachDB local cluster.
-# Security rationale: running in --insecure mode for local dev only. TODO: add TLS/certs for secure mode.
+# Docker Compose for a 6-node CockroachDB local cluster split across East/West regions.
+# Security rationale: running in --insecure mode for local dev only. TODO: add TLS/certs for secure mode and region-aware certs.
 
 
 services:
   cockroach1:
     image: "${COCKROACH_IMAGE}:${COCKROACH_TAG}"
     container_name: cockroach1
-    # Explicit listen/http/advertise addresses ensure nodes can find each other on the Docker network.
-    # Command is provided as a YAML list so each flag is a separate argv token (avoids parsing errors).
-    # NOTE: `${COCKROACH_START_FLAGS}` (if set to multiple flags) is unsupported in list form.
-    # If you need extra flags, edit the list below and add them as separate entries.
+    # Region: East (datacenter dc1). TODO: sync locality labels with production metadata.
+    # Command list prevents flag-parsing ambiguity in Docker Compose.
     command:
       - start
       - --insecure
-      - --join=${JOIN_HOSTS:-cockroach1:26257,cockroach2:26257,cockroach3:26257}
+      - --join=${JOIN_HOSTS:-cockroach1:26257,cockroach2:26257,cockroach3:26257,cockroach4:26257,cockroach5:26257,cockroach6:26257}
       - --listen-addr=cockroach1:26257
       - --http-addr=cockroach1:8080
       - --advertise-addr=cockroach1:26257
+      - --locality=region=east,datacenter=dc1
     hostname: cockroach1
     ports:
       - "${SQL_PORT_1}:26257"  # SQL
@@ -37,14 +36,15 @@ services:
   cockroach2:
     image: "${COCKROACH_IMAGE}:${COCKROACH_TAG}"
     container_name: cockroach2
-    # Explicit listen/http/advertise addresses ensure nodes can find each other on the Docker network.
+    # Region: East (datacenter dc2). TODO: align datacenter metadata with Prod.
     command:
       - start
       - --insecure
-      - --join=${JOIN_HOSTS:-cockroach1:26257,cockroach2:26257,cockroach3:26257}
+      - --join=${JOIN_HOSTS:-cockroach1:26257,cockroach2:26257,cockroach3:26257,cockroach4:26257,cockroach5:26257,cockroach6:26257}
       - --listen-addr=cockroach2:26257
       - --http-addr=cockroach2:8080
       - --advertise-addr=cockroach2:26257
+      - --locality=region=east,datacenter=dc2
     hostname: cockroach2
     ports:
       - "${SQL_PORT_2}:26257"
@@ -64,20 +64,105 @@ services:
   cockroach3:
     image: "${COCKROACH_IMAGE}:${COCKROACH_TAG}"
     container_name: cockroach3
-    # Explicit listen/http/advertise addresses ensure nodes can find each other on the Docker network.
+    # Region: East (datacenter dc3). TODO: add TLS/cert for east-locality endpoints.
     command:
       - start
       - --insecure
-      - --join=${JOIN_HOSTS:-cockroach1:26257,cockroach2:26257,cockroach3:26257}
+      - --join=${JOIN_HOSTS:-cockroach1:26257,cockroach2:26257,cockroach3:26257,cockroach4:26257,cockroach5:26257,cockroach6:26257}
       - --listen-addr=cockroach3:26257
       - --http-addr=cockroach3:8080
       - --advertise-addr=cockroach3:26257
+      - --locality=region=east,datacenter=dc3
     hostname: cockroach3
     ports:
       - "${SQL_PORT_3}:26257"
       - "${HTTP_PORT_3}:8080"
     volumes:
       - "cockroach-data-3:/cockroach/cockroach-data"
+    restart: ${RESTART_POLICY:-"no"}
+    healthcheck:
+      test: ["CMD", "/cockroach/cockroach", "node", "status", "--insecure", "--host=localhost:26257"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - cockroach_net
+
+  cockroach4:
+    image: "${COCKROACH_IMAGE}:${COCKROACH_TAG}"
+    container_name: cockroach4
+    # Region: West (datacenter dc4). TODO: ensure west nodes mirror east-locality failover config.
+    command:
+      - start
+      - --insecure
+      - --join=${JOIN_HOSTS:-cockroach1:26257,cockroach2:26257,cockroach3:26257,cockroach4:26257,cockroach5:26257,cockroach6:26257}
+      - --listen-addr=cockroach4:26257
+      - --http-addr=cockroach4:8080
+      - --advertise-addr=cockroach4:26257
+      - --locality=region=west,datacenter=dc4
+    hostname: cockroach4
+    ports:
+      - "${SQL_PORT_4}:26257"
+      - "${HTTP_PORT_4}:8080"
+    volumes:
+      - "cockroach-data-4:/cockroach/cockroach-data"
+    restart: ${RESTART_POLICY:-"no"}
+    healthcheck:
+      test: ["CMD", "/cockroach/cockroach", "node", "status", "--insecure", "--host=localhost:26257"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - cockroach_net
+
+  cockroach5:
+    image: "${COCKROACH_IMAGE}:${COCKROACH_TAG}"
+    container_name: cockroach5
+    # Region: West (datacenter dc5). TODO: add west-region observability tags.
+    command:
+      - start
+      - --insecure
+      - --join=${JOIN_HOSTS:-cockroach1:26257,cockroach2:26257,cockroach3:26257,cockroach4:26257,cockroach5:26257,cockroach6:26257}
+      - --listen-addr=cockroach5:26257
+      - --http-addr=cockroach5:8080
+      - --advertise-addr=cockroach5:26257
+      - --locality=region=west,datacenter=dc5
+    hostname: cockroach5
+    ports:
+      - "${SQL_PORT_5}:26257"
+      - "${HTTP_PORT_5}:8080"
+    volumes:
+      - "cockroach-data-5:/cockroach/cockroach-data"
+    restart: ${RESTART_POLICY:-"no"}
+    healthcheck:
+      test: ["CMD", "/cockroach/cockroach", "node", "status", "--insecure", "--host=localhost:26257"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - cockroach_net
+
+  cockroach6:
+    image: "${COCKROACH_IMAGE}:${COCKROACH_TAG}"
+    container_name: cockroach6
+    # Region: West (datacenter dc6). TODO: map west datacenters to monitoring dashboards.
+    command:
+      - start
+      - --insecure
+      - --join=${JOIN_HOSTS:-cockroach1:26257,cockroach2:26257,cockroach3:26257,cockroach4:26257,cockroach5:26257,cockroach6:26257}
+      - --listen-addr=cockroach6:26257
+      - --http-addr=cockroach6:8080
+      - --advertise-addr=cockroach6:26257
+      - --locality=region=west,datacenter=dc6
+    hostname: cockroach6
+    ports:
+      - "${SQL_PORT_6}:26257"
+      - "${HTTP_PORT_6}:8080"
+    volumes:
+      - "cockroach-data-6:/cockroach/cockroach-data"
     restart: ${RESTART_POLICY:-"no"}
     healthcheck:
       test: ["CMD", "/cockroach/cockroach", "node", "status", "--insecure", "--host=localhost:26257"]
@@ -95,6 +180,9 @@ services:
       - cockroach1
       - cockroach2
       - cockroach3
+      - cockroach4
+      - cockroach5
+      - cockroach6
     entrypoint: ["/bin/bash", "/init/init-cockroach.sh"]
     volumes:
       - ./init:/init:ro
@@ -111,6 +199,9 @@ services:
       - cockroach1
       - cockroach2
       - cockroach3
+      - cockroach4
+      - cockroach5
+      - cockroach6
     volumes:
       - ./proxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
     ports:
@@ -131,6 +222,9 @@ volumes:
   cockroach-data-1:
   cockroach-data-2:
   cockroach-data-3:
+  cockroach-data-4:
+  cockroach-data-5:
+  cockroach-data-6:
 
 # Explicit network following modern Compose specification (v2+ / Compose spec).
 networks:
@@ -139,6 +233,6 @@ networks:
 
 # Notes:
 # - This compose file expects a .env (or pass env vars via --env-file) with variables described in .env.sample.
-# - For secure setups, replace --insecure with --certs-dir and mount a certs directory into each node.
+# - For secure setups, replace --insecure with --certs-dir and mount a certs directory into each node. TODO: add per-region cert secrets.
 # - Healthchecks use the cockroach binary at /cockroach/cockroach inside the official image.
 # - If you prefer a different naming scheme for volumes, use explicit names (no ${VAR} interpolation) in the top-level 'volumes:' block.
