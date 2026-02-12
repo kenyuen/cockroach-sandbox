@@ -9,9 +9,10 @@ services:
     command:
       - start
       - --insecure
-      - --join=cockroach:26257
+      - --join=cockroach-1:26257
       - --listen-addr=cockroach:26257
       - --http-addr=cockroach:8080
+      - --advertise-addr=cockroach:26257
     restart: ${RESTART_POLICY:-"no"}
     healthcheck:
       test: ["CMD", "/cockroach/cockroach", "node", "status", "--insecure", "--host=localhost:26257"]
@@ -33,7 +34,7 @@ services:
     volumes:
       - ./init:/init:ro
     environment:
-      - INIT_HOST=cockroach:26257
+      - INIT_HOST=cockroach-1:26257
     restart: "no"
     networks:
       - cockroach_net
