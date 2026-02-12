@@ -12,17 +12,14 @@ services:
     command:
       - start
       - --insecure
-      - --join=${JOIN_HOSTS:-cockroach1:26257,cockroach2:26257,cockroach3:26257,cockroach4:26257,cockroach5:26257,cockroach6:26257}
+      - --join=${JOIN_HOSTS}
       - --listen-addr=cockroach1:26257
       - --http-addr=cockroach1:8080
       - --advertise-addr=cockroach1:26257
       - --locality=region=east,datacenter=dc1
     hostname: cockroach1
-    ports:
-      - "${SQL_PORT_1}:26257"  # SQL
-      - "${HTTP_PORT_1}:8080"  # Admin UI
     volumes:
-      - "cockroach-data-1:/cockroach/cockroach-data"
+      - "/cockroach/cockroach-data"
     restart: ${RESTART_POLICY:-"no"}
     healthcheck:
       test: ["CMD", "/cockroach/cockroach", "node", "status", "--insecure", "--host=localhost:26257"]
@@ -40,17 +37,14 @@ services:
     command:
       - start
       - --insecure
-      - --join=${JOIN_HOSTS:-cockroach1:26257,cockroach2:26257,cockroach3:26257,cockroach4:26257,cockroach5:26257,cockroach6:26257}
+      - --join=${JOIN_HOSTS}
       - --listen-addr=cockroach2:26257
       - --http-addr=cockroach2:8080
       - --advertise-addr=cockroach2:26257
       - --locality=region=east,datacenter=dc2
     hostname: cockroach2
-    ports:
-      - "${SQL_PORT_2}:26257"
-      - "${HTTP_PORT_2}:8080"
     volumes:
-      - "cockroach-data-2:/cockroach/cockroach-data"
+      - "/cockroach/cockroach-data"
     restart: ${RESTART_POLICY:-"no"}
     healthcheck:
       test: ["CMD", "/cockroach/cockroach", "node", "status", "--insecure", "--host=localhost:26257"]
@@ -68,17 +62,14 @@ services:
     command:
       - start
       - --insecure
-      - --join=${JOIN_HOSTS:-cockroach1:26257,cockroach2:26257,cockroach3:26257,cockroach4:26257,cockroach5:26257,cockroach6:26257}
+      - --join=${JOIN_HOSTS}
       - --listen-addr=cockroach3:26257
       - --http-addr=cockroach3:8080
       - --advertise-addr=cockroach3:26257
       - --locality=region=east,datacenter=dc3
     hostname: cockroach3
-    ports:
-      - "${SQL_PORT_3}:26257"
-      - "${HTTP_PORT_3}:8080"
     volumes:
-      - "cockroach-data-3:/cockroach/cockroach-data"
+      - "/cockroach/cockroach-data"
     restart: ${RESTART_POLICY:-"no"}
     healthcheck:
       test: ["CMD", "/cockroach/cockroach", "node", "status", "--insecure", "--host=localhost:26257"]
@@ -96,17 +87,14 @@ services:
     command:
       - start
       - --insecure
-      - --join=${JOIN_HOSTS:-cockroach1:26257,cockroach2:26257,cockroach3:26257,cockroach4:26257,cockroach5:26257,cockroach6:26257}
+      - --join=${JOIN_HOSTS}
       - --listen-addr=cockroach4:26257
       - --http-addr=cockroach4:8080
       - --advertise-addr=cockroach4:26257
       - --locality=region=west,datacenter=dc4
     hostname: cockroach4
-    ports:
-      - "${SQL_PORT_4}:26257"
-      - "${HTTP_PORT_4}:8080"
     volumes:
-      - "cockroach-data-4:/cockroach/cockroach-data"
+      - "/cockroach/cockroach-data"
     restart: ${RESTART_POLICY:-"no"}
     healthcheck:
       test: ["CMD", "/cockroach/cockroach", "node", "status", "--insecure", "--host=localhost:26257"]
@@ -124,17 +112,14 @@ services:
     command:
       - start
       - --insecure
-      - --join=${JOIN_HOSTS:-cockroach1:26257,cockroach2:26257,cockroach3:26257,cockroach4:26257,cockroach5:26257,cockroach6:26257}
+      - --join=${JOIN_HOSTS}
       - --listen-addr=cockroach5:26257
       - --http-addr=cockroach5:8080
       - --advertise-addr=cockroach5:26257
       - --locality=region=west,datacenter=dc5
     hostname: cockroach5
-    ports:
-      - "${SQL_PORT_5}:26257"
-      - "${HTTP_PORT_5}:8080"
     volumes:
-      - "cockroach-data-5:/cockroach/cockroach-data"
+      - "/cockroach/cockroach-data"
     restart: ${RESTART_POLICY:-"no"}
     healthcheck:
       test: ["CMD", "/cockroach/cockroach", "node", "status", "--insecure", "--host=localhost:26257"]
@@ -152,17 +137,14 @@ services:
     command:
       - start
       - --insecure
-      - --join=${JOIN_HOSTS:-cockroach1:26257,cockroach2:26257,cockroach3:26257,cockroach4:26257,cockroach5:26257,cockroach6:26257}
+      - --join=${JOIN_HOSTS}
       - --listen-addr=cockroach6:26257
       - --http-addr=cockroach6:8080
       - --advertise-addr=cockroach6:26257
       - --locality=region=west,datacenter=dc6
     hostname: cockroach6
-    ports:
-      - "${SQL_PORT_6}:26257"
-      - "${HTTP_PORT_6}:8080"
     volumes:
-      - "cockroach-data-6:/cockroach/cockroach-data"
+      - "/cockroach/cockroach-data"
     restart: ${RESTART_POLICY:-"no"}
     healthcheck:
       test: ["CMD", "/cockroach/cockroach", "node", "status", "--insecure", "--host=localhost:26257"]
