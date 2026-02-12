@@ -1,0 +1,63 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: cockroach-east
+  labels:
+    app: cockroach
+    region: east
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
+  selector:
+    app: cockroach
+    region: east
+  ports:
+    - name: sql
+      port: 26257
+      targetPort: 26257
+    - name: http
+      port: 8080
+      targetPort: 8080
+  # Security rationale: headless service keeps CockroachDB node discovery internal and avoids exposing pod IPs publicly.
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cockroach-west
+  labels:
+    app: cockroach
+    region: west
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
+  selector:
+    app: cockroach
+    region: west
+  ports:
+    - name: sql
+      port: 26257
+      targetPort: 26257
+    - name: http
+      port: 8080
+      targetPort: 8080
+  # Security rationale: keep the west-region discovery traffic internal to Kubernetes and reuse the same ports as east.
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cockroach-sql-ui
+  labels:
+    app: cockroach
+spec:
+  # Security rationale: ClusterIP confines access to the cluster; use port-forwarding or ingress to expose externally when needed.
+  type: ClusterIP
+  selector:
+    app: cockroach
+  ports:
+    - name: sql
+      port: 26257
+      targetPort: 26257
+    - name: http
+      port: 8080
+      targetPort: 8080
+

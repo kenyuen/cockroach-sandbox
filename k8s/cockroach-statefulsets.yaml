@@ -1,0 +1,183 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: cockroach-east
+  labels:
+    app: cockroach
+    region: east
+spec:
+  serviceName: cockroach-east
+  replicas: 3
+  podManagementPolicy: Parallel
+  selector:
+    matchLabels:
+      app: cockroach
+      region: east
+  template:
+    metadata:
+      labels:
+        app: cockroach
+        region: east
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+        - name: cockroach
+          image: cockroachdb/cockroach:v25.4.3
+          imagePullPolicy: IfNotPresent
+          command:
+            - /cockroach-scripts/start-cockroach.sh
+          ports:
+            - name: sql
+              containerPort: 26257
+            - name: http
+              containerPort: 8080
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: REGION
+              value: east
+            - name: HEADLESS_SERVICE
+              value: cockroach-east
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: JOIN_HOSTS
+              value: cockroach-east-0.cockroach-east:26257,cockroach-east-1.cockroach-east:26257,cockroach-east-2.cockroach-east:26257,cockroach-west-0.cockroach-west:26257,cockroach-west-1.cockroach-west:26257,cockroach-west-2.cockroach-west:26257
+            - name: CLUSTER_NAME
+              value: local-cockroach
+            - name: COCKROACH_START_FLAGS
+              value: "--cache=25% --max-sql-memory=25%"
+          volumeMounts:
+            - name: cockroach-data
+              mountPath: /cockroach/cockroach-data
+            - name: cockroach-scripts
+              mountPath: /cockroach-scripts
+              readOnly: true
+          readinessProbe:
+            exec:
+              command:
+                - /cockroach/cockroach
+                - node
+                - status
+                - --insecure
+                - --host=localhost:26257
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+      volumes:
+        - name: cockroach-scripts
+          configMap:
+            name: cockroach-scripts
+            defaultMode: 0755
+  volumeClaimTemplates:
+    - metadata:
+        name: cockroach-data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 10Gi
+        # StorageClassName is left unset so the cluster default applies; override for faster SSD-backed storage if needed.
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: cockroach-west
+  labels:
+    app: cockroach
+    region: west
+spec:
+  serviceName: cockroach-west
+  replicas: 3
+  podManagementPolicy: Parallel
+  selector:
+    matchLabels:
+      app: cockroach
+      region: west
+  template:
+    metadata:
+      labels:
+        app: cockroach
+        region: west
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+        - name: cockroach
+          image: cockroachdb/cockroach:v25.4.3
+          imagePullPolicy: IfNotPresent
+          command:
+            - /cockroach-scripts/start-cockroach.sh
+          ports:
+            - name: sql
+              containerPort: 26257
+            - name: http
+              containerPort: 8080
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: REGION
+              value: west
+            - name: HEADLESS_SERVICE
+              value: cockroach-west
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: JOIN_HOSTS
+              value: cockroach-east-0.cockroach-east:26257,cockroach-east-1.cockroach-east:26257,cockroach-east-2.cockroach-east:26257,cockroach-west-0.cockroach-west:26257,cockroach-west-1.cockroach-west:26257,cockroach-west-2.cockroach-west:26257
+            - name: CLUSTER_NAME
+              value: local-cockroach
+            - name: COCKROACH_START_FLAGS
+              value: "--cache=25% --max-sql-memory=25%"
+          volumeMounts:
+            - name: cockroach-data
+              mountPath: /cockroach/cockroach-data
+            - name: cockroach-scripts
+              mountPath: /cockroach-scripts
+              readOnly: true
+          readinessProbe:
+            exec:
+              command:
+                - /cockroach/cockroach
+                - node
+                - status
+                - --insecure
+                - --host=localhost:26257
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+      volumes:
+        - name: cockroach-scripts
+          configMap:
+            name: cockroach-scripts
+            defaultMode: 0755
+  volumeClaimTemplates:
+    - metadata:
+        name: cockroach-data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 10Gi
+        # StorageClassName is left unset so the cluster default applies; override for faster SSD-backed storage if needed.
