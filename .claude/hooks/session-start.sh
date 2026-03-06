@@ -7,6 +7,8 @@ if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
   exit 0
 fi
 
+echo '{"async": true, "asyncTimeout": 300000}'
+
 # Copy .env from sample if not present
 if [ ! -f "$CLAUDE_PROJECT_DIR/.env" ]; then
   cp "$CLAUDE_PROJECT_DIR/.env.sample" "$CLAUDE_PROJECT_DIR/.env"
