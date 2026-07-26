@@ -10,6 +10,18 @@ A local development sandbox for exploring and testing [CockroachDB](https://www.
 
 ---
 
+## Claude Code (Web Sessions)
+
+When using Claude Code on the web, a session-start hook (`.claude/hooks/session-start.sh`) runs automatically in the background after each session starts. It:
+
+- Copies `.env` from `.env.sample` if missing
+- Copies `liquibase/.env` from `liquibase/.env.sample` if missing
+- Verifies `python3` and `docker compose` are available
+
+The hook only runs in remote sessions (`CLAUDE_CODE_REMOTE=true`) and is registered in `.claude/settings.json`. Validated against: Python 3.11, Docker Compose v5.
+
+---
+
 ## Environment Setup
 
 Copy the environment template before running anything:
